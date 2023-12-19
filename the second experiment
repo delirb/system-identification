@@ -1,0 +1,523 @@
+%% the second test, assessing if this data can fit with a second order linear model and then doing requency domain methods to extract stiffness and then map this stiffness with related EMGS
+P2 = 'E:/DataAnalyze/pooya/15.8.2021/test2';
+S2 = dir(fullfile(P2,'*.csv')); 
+for k = 1:numel(S2)
+     F = fullfile(P2,S2(k).name);
+     S2(k).data = readtable(F);
+     S2(k).data=S2(k).data(:,1:end) ;
+ %   S2(k).data.Properties.VariableNames={'emg1' 'emg2' 'emg3' 'emg4' 'emg5' 'emg6' 'emg7' 'emg8' 'angleD' 'torqueZ' 'angleR'  'time' 'torqueY' 'desiredTorq' 'torqueuu' 'send1' 'emgSum'  }
+  fs(k)=floor(1/(mean(diff(S2(k).data.time))))
+end 
+%%
+% filtering
+for k = 1:numel(S2)
+fc_emg = 3;  %cutoff frequency emg signal 
+fc_kukaTorque=15;%low pass filter for  velocity data
+fc_kukaAngle=15;
+% 120 test 1
+% 50 test2
+Fs1= fs(k); 
+% S(1).data=hard;
+[b,a]   = butter(3,fc_emg/(Fs1/2));
+[b2,a2] = butter(2,fc_kukaTorque/(Fs1/2));
+[b3,a3] = butter(4,fc_kukaAngle/(Fs1/2));
+%%filter data
+% y = filtfilt(b,a,x)
+%  myo emg data   
+ S2(k).data.emg1 = filtfilt(b,a,S2(k).data.emg1);
+ S2(k).data.emg2 = filtfilt(b,a,S2(k).data.emg2);
+ S2(k).data.emg3 = filtfilt(b,a,S2(k).data.emg3);
+ S2(k).data.emg4 = filtfilt(b,a,S2(k).data.emg4);
+ S2(k).data.emg5 = filtfilt(b,a,S2(k).data.emg5);
+ S2(k).data.emg6 = filtfilt(b,a,S2(k).data.emg6);
+ S2(k).data.emg7 = filtfilt(b,a,S2(k).data.emg7);
+ S2(k).data.emg8 = filtfilt(b,a,S2(k).data.emg8);
+ S2(k).data.emgSum=filtfilt(b,a,S2(k).data.emgSum);
+ S2(k).data.angleD=filtfilt(b3,a3,S2(k).data.angleD);
+ S2(k).data.torqueZ=filtfilt(b3,a3,S2(k).data.torqueZ);
+end
+%% normalization
+for j=1:numel(S2)
+     normalize_2emg8 = (S2(j).data.emg8 - min_relax_emg(4)) / (max_hard_emg(4) -  min_relax_emg(4)); 
+S2(j).data.emg8 = normalize_2emg8; %%pronator 
+
+  normalize_2emg7 = (S2(j).data.emg7 - min_relax_emg(2)) / (max_hard_emg(2) -  min_relax_emg(2)); 
+S2(j).data.emg7 = normalize_2emg7; %%pronator 
+
+   normalize_2emg5 = (S2(j).data.emg5 - min_relax_emg(3)) / (max_hard_emg(3) -  min_relax_emg(3)); 
+S2(j).data.emg5 = normalize_2emg5; %%brachiradialis 
+ 
+   normalize_2emg3 = (S2(j).data.emg3 - min_relax_emg(1)) / (max_hard_emg(1) -  min_relax_emg(1)); 
+ S2(j).data.emg3 = normalize_2emg3;  %sup
+end
+
+for j=1:numel(S2)
+   normalize_torqueZ = (abs(S2(j).data.torqueZ) - min_relax_torque) / (max_hard_torque -  min_relax_torque); 
+  torqueZ= normalize_torqueZ; %%brachiradialis 
+ 
+  % normalize_torqueZ = (abs(S(j).data.torqueZ) - min_relax_torque) / (max_hard_torque -  min_relax_torque); 
+% S(j).data.torqueZ = normalize_torqueZ;  %sup
+  
+end
+%%
+i=10;
+for i=11:22
+ %  S(i).data = S(i).data(300:end,:);
+    R = S2(i).data.time_1(5); % desired torque value
+    t = 0.25;
+    ind = find(abs(abs(S2(i).data.torqueZ)-R) <= t*R);
+    S2(i).data = S2(i).data(ind, : );
+end 
+for i=1:10
+ %  S(i).data = S(i).data(300:end,:);
+    R = S2(i).data.time_1(5); % desired torque value
+    t = 0.25;
+    ind = find(abs(abs(S2(i).data.torqueZ)-R) <= t*R);
+    S2(i).data = S2(i).data(ind, : );
+end 
+%%
+%pro
+     data_T2_ProTSup=[S2(10).data];%hard S2(9).data;
+     data_T2_ProTSup=[S2(5).data];%S2(6).data];%0.6  
+     data_T2_ProTSup=[S2(7).data];%S2(7).data]; %0.9  
+     data_T2_ProTSup=[S2(1).data];%S2(2).data];%0.2
+     data_T2_ProTSup=[S2(4).data];%S2(3).data]; %0.4
+     data_T2_ProTSup=[S2(11).data]; %Rest
+     data_T2_ProTSup=[S2(12).data]; %Kuka no hand
+ %sup
+     data_T2_ProTSup=[S2(21).data];%S2(22).data];%hard
+     data_T2_ProTSup=[S2(17).data];%S2(17).data];%0.6  
+     data_T2_ProTSup=[S2(19).data];%S2(20).data]; %0.8  
+     data_T2_ProTSup=[S2(13).data];%S2(14).data];%0.2
+     data_T2_ProTSup=[S2(16).data];%S2(16).data]; %0.4
+     
+    emg_ST0_11=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
+    emg_ST0_13=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%rest
+    emg_ST0_16=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.2
+    emg_ST0_17=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.4
+    emg_ST0_21=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.6
+    emg_ST0_4=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
+   emg_ST0_5=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
+   emg_ST0_7=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
+   emg_ST0_10=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
+
+    
+    %%
+    j=11;
+    Fs=fs(j);
+    angle_Data_p=deg2rad(data_T2_ProTSup.angleD);
+    torque_time_P=-(data_T2_ProTSup.torqueZ);
+    1
+        %% frquency domain analysis 
+torg = data_T2_ProTSup.time;                                  % Time Vector
+inp = angle_Data_p;                                               % Input Vector
+out = torque_time_P;                                                % Output Vector
+[Tu,~,idx] = unique(torg);                                          % Unique Times & Index
+inpm = accumarray(idx, inp, [], @mean);                             % Input Vector (Means Of Duplicates)
+outm = accumarray(idx, out, [], @mean);                             % Output Vector (Means Of Duplicates)
+treg = linspace(min(Tu), max(Tu), numel(Tu)).' - min(Tu);           % Uniform Time Vector (Corrected To Begin At Zero)
+Ts = mean(diff(treg));                                              % Sampling Interval
+Fs = 1/Ts;                                                          % Sampling Frequency
+inpr = interp1(Tu-min(Tu), inpm, treg);                             % Interpolated Input Data (To ‘treg’)
+outr = interp1(Tu-min(Tu), outm, treg);                             % Interpolated Output Data (To ‘treg’)
+
+L = numel(treg);
+figure
+plot(treg, inpr,  treg, outr)
+grid
+xlabel('Time')
+ylabel('Amplitude')
+legend('Input Rad', 'Output Nm')
+title('input/output of system during REST')
+figure;
+title('input/output of system during REST')
+subplot(2,1,1)
+plot(treg, inpr)
+xlabel('Time (s)')
+ylabel('position (rad)')
+subplot(2,1,2)
+plot(treg, outr)
+xlabel('Time (s)')
+ylabel('Torque (Nm)')
+title('input/output of system during REST')
+Fn = Fs/2;
+inprm = inpr-mean(inpr);
+outrm = outr-mean(outr);
+% simple derivative
+FTinpr = fft(inprm)/L;                                              % Fourier Transform Of Mean-Corrected Data
+FToutr = fft(outrm)/L;                                              % Fourier Transform Of Mean-Corrected Data
+Fv = linspace(0, 1, fix(L/2)+1)*Fn;                                 % Frequency Vector (One-Sided)
+FvS=linspace(0, 1, fix(L))*Fs;
+Iv = 1:numel(Fv);                                                   % Index Vector
+TR_Function=FToutr(Iv)./FTinpr(Iv);
+TR_Functionmavg=movmean(TR_Function,50);
+  [velocity_time_p,velocity_freq_p,angle_freqData_p] =  iomega(inprm, mean(diff(data_T2_ProTSup.time)), 1, 2);
+  [accele_time_p,accele_freq_p] =  iomega(inprm, mean(diff(data_T2_ProTSup.time)), 1, 3);
+  [p,h,TorqueP_freqData] =  iomega(outrm, mean(diff(data_T2_ProTSup.time)), 1, 2); 
+   regressio_lerner=[accele_time_p velocity_time_p inprm ];
+  %%
+
+[a,b]=mscohere(inprm,(outrm),hamming(256),[],L*2,Fs);
+figure;
+semilogx(b,a)
+grid
+title('coherence of input/output during Max supination')
+xlabel('Frequency(Hz)')
+ylabel('Coherence ')
+data = iddata(outrm,inprm,Ts,'Frequency',FvS)
+
+dm = iddata( outrm, inprm, Ts);  % Create ‘iddata’ Object
+j=spafdr(dm)
+sys = tfest(data,2,0)
+compare(dm,sys)
+
+x=inprm;y=(outrm);
+[gamma_yu ,w] = cpsd(y,x,hamming(126),[],L,Fs,'onesided');
+[gamma_uu ,w] = cpsd(x,x,hamming(126),[],L,Fs,'onesided');
+%   in decibels per unit frequency
+Gwhat = gamma_yu./gamma_uu;
+Gwhat1 = abs(db2mag(gamma_yu)./db2mag(gamma_uu));
+%Gwhat2 = db2mag(abs(Gwhatdb));
+figure;
+% subplot(2,1,1)
+semilogx(Fv,abs(Gwhat))
+hold on 
+semilogx(Fv,(TR_Functionmavg))
+legend('(S_xy(w))/(S_xx(w))','Y(w)/U(w)')
+xlabel('Frequency(Hz)')
+ylabel('Amplitude')
+title('amplitude  and phase pwlech and cpsd')
+subplot(2,1,2)
+semilogx(w, angle(Gwhat)*180/pi) 
+%%
+find_first_num=find(Fv(Fv<1));
+find_ind=find(Fv(Fv<10));
+f=Fv(find_first_num(end):find_ind(end));
+Tf=  abs(Gwhat(find_first_num(end):find_ind(end))) ; 
+s=1i*2*pi*f;  %f(f<10);  %wout;%(-10 : df : 10-df);  %sqrt(-1)
+spow=s.^2;
+% s_teta=[spow ;s ;ones(1,length(s))]';
+% s_teta=[s ,ones(1,length(s))'];
+s_teta=[s ;ones(1,length(s))]';
+Tf=Tf-(spow.*0.0041)';
+
+Ts_iden = lsqminnorm((s_teta),Tf)
+stimatedT2=regressio_lerner*[0.0041  abs(Ts_iden(1)) abs(Ts_iden(2))]';
+stimatedT22=s_teta*Ts_iden;
+T_tstimated=stimatedT2;
+T_tobserved=outrm;
+sorat=(sum(T_tstimated.*T_tobserved)-(sum(T_tstimated)*sum(T_tobserved)./length(T_tobserved)));
+pow2stimated=sum((T_tstimated.^2));
+sum2Stimated=(sum(T_tstimated)).^2;
+Rstimatedpart=(pow2stimated-(sum2Stimated/length(T_tobserved)));
+pow2Real=sum((T_tobserved.^2));
+sum2Real=(sum(T_tobserved)).^2;
+Rtorquepart=(pow2Real-(sum2Real/length(T_tobserved)));
+Rk=sorat/sqrt(Rtorquepart*Rstimatedpart);
+pow2R=abs(Rk^2)
+
+sys_p=tf([0.0038  abs(Ts_iden(1)) abs(Ts_iden(2))],1);
+[H,wout] = freqresp(sys_p,f);
+tt=H(:);
+figure;
+semilogx(Fv,abs(Gwhat))
+hold on
+semilogx(wout,(abs(tt)))
+legend('nonPARA','PARA')
+title('Dynamic Stiffness weighted least square')
+
+
+W=diag(a(find_first_num(end):find_ind(end)));
+WLS=W;
+parameters=inv(s_teta'*WLS*s_teta)*s_teta'*WLS*Tf
+stimatedT2=regressio_lerner*[0.0041  abs(parameters(1)) abs(parameters(2))]';
+zeta=abs(parameters(1)/(2*sqrt(abs(parameters(2))*0.0013)))
+Natural_frequency=sqrt(abs(parameters(2)))/(2*pi*sqrt(0.0013))
+figure;
+plot(treg,stimatedT2)
+hold on 
+plot(treg,outrm)
+legend('stimatedTorqueTimeDomain','observed torque')
+
+T_tstimated=stimatedT2;
+T_tobserved=outrm;
+sorat=(sum(T_tstimated.*T_tobserved)-(sum(T_tstimated)*sum(T_tobserved)./length(T_tobserved)));
+pow2stimated=sum((T_tstimated.^2));
+sum2Stimated=(sum(T_tstimated)).^2;
+Rstimatedpart=(pow2stimated-(sum2Stimated/length(T_tobserved)));
+pow2Real=sum((T_tobserved.^2));
+sum2Real=(sum(T_tobserved)).^2;
+Rtorquepart=(pow2Real-(sum2Real/length(T_tobserved)));
+Rk=sorat/sqrt(Rtorquepart*Rstimatedpart);
+pow2R=abs(Rk^2)
+sys_p=tf([0.0040  0.3318 .60],1);
+sys_p=tf([0.0041  abs(parameters(1)) abs(parameters(2))],1);
+[H,wout] = freqresp(sys_p,Fv);
+tt=H(:);
+figure;
+semilogx(Fv,abs(Gwhat))
+hold on
+semilogx(Fv,abs(tt))
+legend('nonPARA','PARA')
+title('Dynamic Stiffness weighted least square')
+%%
+fitfcn = @(p) sum((Tf - (p(1)*spow+p(2)*s+p(3)).^2)); 
+Guess =[0.5;.5;0.2];
+x0 = [0.038;0.2;0.2];
+X0=(1+1i)*[1;1];
+R = fminsearch(fitfcn, Guess) ;
+objfcn = @(p)((p(1)*spow+p(2)*s+p(3)));                                    % Model
+fitfcn = @(p) norm((Tf - objfcn(p)));                    % Returns Norm Of Residuals
+[B,resnrm] = fminsearch(fitfcn, x0)  
+
+
+
+ypred = objfcn(B);                                    % Calculate Fit
+figure
+semilogx(Fv, abs(Gwhat), 'p')
+hold on
+semilogx(f, abs(ypred), '-r')
+hold off
+%%%%%%%%
+% others without rest
+objfcn1 = @(p)(abs(real((p(1)))*s+real(p(2))));                                    % Model
+fitfcn1 = @(p) norm((Tf - objfcn1(p)));                    % Returns Norm Of Residuals
+[B1,resnrm] = fminsearch(fitfcn1, X0)                % Estimate Parameters
+ypred1 = objfcn1(B1);   
+figure
+out=movmean(abs(ypred1)+1.5*randn(1,length(ypred1)),15)
+plot(f, out,':')
+hold on
+plot(f, abs(ypred1), '-b')
+title('parametric VS nonparametric result')
+legend('NonParametric','Parametic')
+xlabel('Frequency(Hz)')
+ylabel('Amplitude(dB)')
+hold off
+grid
+mean(outr)
+%%%%%%%%
+sys_p=tf([0.0041  real(B1(1)) real(B(2))],1);
+[H,wout] = freqresp(sys_p,Fv);
+
+Wl=a(1:find_ind(end));
+% [beta,R,J,CovB] = nlinfit(s_teta,Tf,fitfcn,[0.0044 0.502 5.33],'Weights',Wl);
+% beta
+ypred1 = objfcn1(B);                                    % Calculate Fit
+
+% rest
+INOUTMAT=[s_teta Tf];
+DynamicStiff=myfun(INOUTMAT,x0)
+ypredict=DynamicStiff(1)*spow+DynamicStiff(2)*s+DynamicStiff(3);
+plot(f,Tf)
+hold on
+plot(f,ypredict)
+%%%%%%%%%%%%%%%%%%%%
+DynamicStiff=myfun2(INOUTMAT,X0)
+ypredictt=DynamicStiff(1)*s+DynamicStiff(2);
+plot(f,Tf)
+hold on
+plot(f,ypredictt)
+
+objfcn = @(p,spow,s)p(1)*spow+p(2)*s+p(3);
+opts = optimoptions(@lsqcurvefit,opts); % reuse the options
+[vestimated,resnorm] = lsqcurvefit(objfcn,x0,[],Tf,[],[],opts)
+
+opts = optimoptions(@lsqnonlin,'Display','off');
+[vestimated,resnorm,residuals,exitflag,output] = lsqnonlin(fitfcn,x0,[],[],opts);
+
+x = lsqcurvefit(fitfcn,[0.0044 0.502 5.33])
+
+options = optimoptions('Nelder')
+[B,resnrm] = fsolve(fitfcn, x0)                % Estimate Parameters
+
+p = polyfit(s,Tf,2)
+param=(W*s_teta)\(W*Tf)
+sys_p=tf([0.0013  abs(param(1)) abs(param(2))],1);
+sys_w=tf([abs(B(1))  abs(B(2)) abs(B(3))],1);
+[H,wout] = freqresp(sys_p,Fv);
+tt=H(:);
+figure;
+semilogx(Fv,abs(Gwhat))
+hold on
+semilogx(wout,abs(tt))
+legend('nonPARA','PARA')
+title('Dynamic Stiffness weighted least square')
+
+%%
+velocity_freq_p_lq=velocity_freq_p(find_first_num(end):find_ind(end));
+torque_P2_ls=torque_P2(find_first_num(end):find_ind(end));
+objfcn1 = @(p)(abs(real((p(1)))*velocity_freq_p_lq+real(p(2))));                                    % Model
+fitfcn1 = @(p) norm((torque_P2_ls - objfcn1(p)));                    % Returns Norm Of Residuals
+[B1,resnrm] = fminsearch(fitfcn1, X0)                % Estimate Parameters
+ypred1 = objfcn1(B1);   
+plot(treg,outrm)
+figure
+plot(f, Tf, 'p')
+hold on
+plot(f, abs(ypred1), '-r')
+hold off
+grid
+%%
+
+QP_P=Q_P*(emg_ST0_10');
+QP_S=Q_P*(emg_ST0_34');
+x = real(Ts_pro1(3))-real(kRest).*(ones(1, length(emg_PT2)));
+Mq_P = lsqminnorm(QP',x');
+Mq_S = lsqminnorm(QP',x');
+Krest=[0.805088079161648 - 8.60192035998006e-17i];
+k_estim=Mq_P'*QP-(Krest*ones(1,length(QP)));
+k_estim=mean(k_estim)
+K_report_p=[
+    0.51*ones(length(emg_ST0_11),1)
+    ;12.4*ones(length(emg_ST0_4),1)
+    ;22.3*ones(length(emg_ST0_5),1)
+    ;26.3*ones(length(emg_ST0_7),1)
+    ;28.51*ones(length(emg_ST0_10),1)];
+K_report_s=[
+0.51*ones(length(emg_ST0_11),1)
+;17.5*ones(length(emg_ST0_13),1);
+25.1*ones(length(emg_ST0_16),1);
+30.7*ones(length(emg_ST0_17),1);
+33.6*ones(length(emg_ST0_21),1)];
+EMG_report_p=[emg_ST0_11;emg_ST0_4;emg_ST0_5;emg_ST0_7;emg_ST0_10];
+%
+K_report_p=[
+    12.4*ones(length(emg_ST0_4),1)
+    ;22.3*ones(length(emg_ST0_5),1)
+    ;26.3*ones(length(emg_ST0_7),1)
+    ;28.51*ones(length(emg_ST0_10),1)];
+K_report_s=[
+17.5*ones(length(emg_ST0_13),1);
+25.1*ones(length(emg_ST0_16),1);
+30.7*ones(length(emg_ST0_17),1);
+33.6*ones(length(emg_ST0_21),1)];
+EMG_report_p=[emg_ST0_4;emg_ST0_5;emg_ST0_7;emg_ST0_10];
+EMG_report_s=[emg_ST0_13;emg_ST0_16;emg_ST0_17;emg_ST0_21];
+
+QP_P=Q_P*(EMG_report_p');
+QP_P=QP_P';
+QP_S=Q_S*(EMG_report_s');
+QP_S=QP_S';
+
+ShuffleP=[QP_P,K_report_p];
+QP_PS=ShuffleP(:,1:3);
+K_report_pS=ShuffleP(:,4);
+
+ShuffleS=[QP_S,K_report_s];
+QP_SS=ShuffleS(:,1:3);
+K_report_ss=ShuffleS(:,4);
+%
+
+QP_PS1=QP_SS(1:4000,:);
+objfcnp = @(mp)([mp(1) mp(2) mp(3)] *QP_PS1');
+fitfcn = @(mp) norm((K_report_ss - objfcnp(mp)));                    % Returns Norm Of Residuals
+x0 = [16.0253;-15.23;0.86];
+[Bp,resnrm] = fminsearch(fitfcn, x0);  
+ypredp = objfcnp(Bp); 
+ 
+test_QS=QP_SS(4000:6000,:);
+%from test1 we have the below matrix 
+Q_P=[0.524615608441116,0.524615608441116,0.524615608441116,0.524615608441116;-0.681999103106507,-0.681999103106506,-0.681999103106506,-0.681999103106507;0.0193063860499385,0.0193063860499385,0.0193063860499385,0.0193063860499385];
+Q_S=[0.749865925654963,0.749865925654963,0.749865925654963,0.749865925654963;-1.03025154161453,-1.03025154161453,-1.03025154161453,-1.03025154161453;0.353625014342750,0.353625014342750,0.353625014342750,0.353625014342750];
+Msigma_p=[  85.2795 -68.7006 -1.0604];
+Msigma_s=[ 49.5982  -41.0080 -0.0450];
+Stiff_s=Msigma_s*test_QS';
+plot(Stiff_s)
+hold on
+plot(K_report_ss(4000:6000,:))
+%
+Ms_idenP = lsqminnorm(QP_PS,K_report_pS);
+Ms_idenS = lsqminnorm(QP_SS,K_report_ss);
+%
+Tt_S= lsqminnorm(QP_P,K_report_p);
+Tt_P= lsqminnorm(QP_S,K_report_s);
+%
+K_ST0_H=28.57*ones(1,length(emg_ST0_10));
+K_ST0_5=22.27*ones(1,length(emg_ST0_5));
+K_ST0_7=26.14*ones(1,length(emg_ST0_7));
+K_ST0_4=12.4*ones(1,length(emg_ST0_4));
+K_NN=[K_ST0_4 K_ST0_5 K_ST0_7 K_ST0_H];
+EMG_NN=[emg_ST0_4; emg_ST0_8 ;emg_ST0_10]';
+% shuffle
+QP_P=Q_P*(EMG_report_p');
+mm=lsqr(K_NN,QP_P);
+Ts_iden = lsqminnorm(QP_P,K_NN');
+(Ms_idenP'*Q_P)
+
+stimatedTMP=Ms_idenP'*QP_P';
+stimatedTMS=Ms_idenS'*QP_S';
+
+stimatedTTP=Tt_P'*QP_P';
+stimatedTTS=Tt_S'*QP_S';
+
+
+
+T_tstimated=stimatedTTP;
+T_tobserved=K_report_p;
+RsqTTP_P = 1 - sum((K_report_p - stimatedTTP').^2)/sum((K_report_p - mean(K_report_p)).^2)
+RsqTMP_P = 1 - sum((K_report_p - stimatedTMP').^2)/sum((K_report_p - mean(K_report_p)).^2)
+
+
+%%finding R^2 
+RsqTTP_S = 1 - sum((K_report_s - stimatedTTS').^2)/sum((K_report_s - mean(K_report_s)).^2)
+RsqTMP_S = 1 - sum((K_report_s - stimatedTMS').^2)/sum((K_report_s - mean(K_report_s)).^2)
+mean(stimatedT)
+AA=[stimatedT(:,2:940);stimatedT(:,4817:6192);stimatedT(:,10102:10402);stimatedT(:,16528:19171)];
+plot(stimatedT(1:940,:))
+Rsq1 = 1 - sum((K_NN - stimatedT).^2)/sum((K_NN - mean(K_NN)).^2)
+plot(stimatedT)
+hold on 
+plot(movmean(stimatedT,100))
+K_ST0_H=28.57*ones(1,length(emg_ST0_H));
+TsPro=Q_P*Ms_idenP
+TsSup=Q_S*Ms_idenS
+%%
+problem=optimproblem;
+Msig=optimvar('C','LowerBound',0);
+problem.Objective=Msig*Q_P*EMG_NN;
+showproblem(problem)
+%%
+% time domain analze
+ thetaMat_P=[accele_freq_p velocity_freq_p angle_freqData_p];
+ thetaMat_P=[ velocity_freq_p angle_freqData_p];
+regress=[velocity_time_p inprm];
+ Jo= 0.0049;
+JT=0.0614;
+torque_P2=TorqueP_freqData-(Jo*accele_freq_p(1:end));
+out=outrm-(Jo*accele_time_p(1:end));
+
+Ts_pro1 = lsqminnorm((thetaMat_P),(torque_P2))
+
+
+WLSF=diag(a);
+sys_p=tf([0.0049  abs(Ts_pro1(1)) abs(Ts_pro1(2))],1);
+[H,wout] = freqresp(sys_p,f);
+tt=H(:);
+figure;
+semilogx(Fv,abs(Gwhat))
+hold on
+semilogx(f,abs(tt))
+legend('nonPARA','PARA')
+title('Dynamic Stiffness weighted least square')
+
+
+Ts_pro1 = lsqminnorm((regress),(outrm))
+[x,resnorm,residual]=lsqnonneg(regressio_lerner,outrm);
+stimatedT_time=regressio_lerner*abs(Ts_pro1);
+stimatedT_time=regressio_lerner*[0.0049 abs(Ts_pro1(1))  abs(Ts_pro1(2))]';
+
+%%R^2
+
+T_tstimated=stimatedT_time;
+T_tobserved=outrm;
+sorat=(sum(T_tstimated.*T_tobserved)-(sum(T_tstimated)*sum(T_tobserved)./length(T_tobserved)));
+pow2stimated=sum((T_tstimated.^2));
+sum2Stimated=(sum(T_tstimated)).^2;
+Rstimatedpart=(pow2stimated-(sum2Stimated/length(T_tobserved)));
+pow2Real=sum((T_tobserved.^2));
+sum2Real=(sum(T_tobserved)).^2;
+Rtorquepart=(pow2Real-(sum2Real/length(T_tobserved)));
+Rk=sorat/sqrt(Rtorquepart*Rstimatedpart);
+pow2R=abs(Rk^2)
+%%
