@@ -1,0 +1,120 @@
+
+clear all
+%%
+P = 'E:/DataAnalyze/pooya/15.8.2021/test1';
+S = dir(fullfile(P,'*.csv')); 
+for k = 1:numel(S)
+     F = fullfile(P,S(k).name);
+     S(k).data = readtable(F);
+     S(k).data=S(k).data(:,1:end) ;
+     S(k).data.Properties.VariableNames={'emg1' 'emg2' 'emg3' 'emg4' 'emg5' 'emg6' 'emg7' 'emg8' 'angleD' 'torqueZ' 'angleR' 'torqueY' 'time' 'desiredTorq' 'torque1' 'send1' 'zero1'  'emgSum'  }
+    fs(k)=floor(1/(mean(diff(S(k).data.time))))
+end 
+
+%%
+% butterworth filtering
+for K=1:19
+fc_emg = 3;  %cutoff frequency emg signal 
+fc_kukaTorque=10;%low pass filter for  velocity data
+fc_kukaAngle=10;
+% 120 test 1
+% 50 test2
+Fs1= fs(K); 
+% S(1).data=hard;
+[b,a]   = butter(3,fc_emg/(Fs1/2));
+[b2,a2] = butter(2,fc_kukaTorque/(Fs1/2));
+%%filter data
+% y = filtfilt(b,a,x)
+%  myo emg data   
+ S(K).data.emg1 = filtfilt(b,a,S(K).data.emg1);
+ S(K).data.emg2 = filtfilt(b,a,S(K).data.emg2);
+ S(K).data.emg3 = filtfilt(b,a,S(K).data.emg3);
+ S(K).data.emg4 = filtfilt(b,a,S(K).data.emg4);
+ S(K).data.emg5 = filtfilt(b,a,S(K).data.emg5);
+ S(K).data.emg6 = filtfilt(b,a,S(K).data.emg6);
+ S(K).data.emg7 = filtfilt(b,a,S(K).data.emg7);
+ S(K).data.emg8 = filtfilt(b,a,S(K).data.emg8);
+ S(K).data.emgSum=filtfilt(b,a,S(K).data.emgSum);
+ S(K).data.angleD=filtfilt(b2,a2,S(K).data.angleD);
+ S(K).data.torqueZ=filtfilt(b2,a2,S(K).data.torqueZ);
+end
+
+%%normalizing emg and torque 
+%normalize emg positive 
+data_T1_relax=[S(10).data]; %pro sup
+min_relax_emg(1)=min(data_T1_relax.emg3);
+min_relax_emg(2)=min(data_T1_relax.emg7);
+min_relax_emg(3)=min(data_T1_relax.emg5);
+min_relax_emg(4)=min(data_T1_relax.emg8);
+data_T1_hard=[S(9).data;S(19).data]; %max sup & pro
+max_hard_emg(1)=max(data_T1_hard.emg3); %sup
+max_hard_emg(2)=max(data_T1_hard.emg7); %pro
+max_hard_emg(3)=max(data_T1_hard.emg5); %brachi
+max_hard_emg(4)=max(data_T1_hard.emg8); %pro
+% torque positive and negative 
+min_relax_torque=min(abs(data_T1_relax.torqueZ));
+max_hard_torque=max(abs(data_T1_hard.torqueZ));
+
+for j=1:numel(S)
+   normalize_emg8 = (S(j).data.emg8 - min_relax_emg(4)) / (max_hard_emg(4) -  min_relax_emg(4)); 
+S(j).data.emg8 = normalize_emg8; %%pronator 
+    normalize_emg7 = (S(j).data.emg7 - min_relax_emg(2)) / (max_hard_emg(2) -  min_relax_emg(2)); 
+S(j).data.emg7 = normalize_emg7; %%pronator 
+
+   normalize_emg5 = (S(j).data.emg5 - min_relax_emg(3)) / (max_hard_emg(3) -  min_relax_emg(3)); 
+S(j).data.emg5 = normalize_emg5; %%brachiradialis 
+ 
+   normalize_emg3 = (S(j).data.emg3 - min_relax_emg(1)) / (max_hard_emg(1) -  min_relax_emg(1)); 
+ S(j).data.emg3 = normalize_emg3;  %sup
+  
+end
+
+
+for j=1:numel(S)
+   normalize_torqueZ = (abs(S(j).data.torqueZ) - min_relax_torque) / (max_hard_torque -  min_relax_torque); 
+  torqueZ= normalize_torqueZ; %%brachiradialis 
+ 
+  % normalize_torqueZ = (abs(S(j).data.torqueZ) - min_relax_torque) / (max_hard_torque -  min_relax_torque); 
+% S(j).data.torqueZ = normalize_torqueZ;  %sup
+  
+end
+
+%% extracing desired torque +-10 %
+for k = 1:numel(S) %test1 
+   S(k).data = S(k).data(100:end-100,:);
+   R = S(k).data.desiredTorq(2); % desired torque value
+   t = 0.20;
+   ind = find(abs(abs(S(k).data.torqueZ)-R) <= t*R);
+   S(k).data = S(k).data(ind, : );
+end
+%%
+data_T1_Pro=[S(10).data;S(1).data;S(2).data;S(3).data;S(4).data;S(5).data;S(6).data;S(7).data;S(8).data;S(9).data];
+torque_P=data_T1_Pro.torqueZ;
+torque_P=torque_P(2:end,:);
+emg_P=[data_T1_Pro.emg3,data_T1_Pro.emg5,data_T1_Pro.emg7,data_T1_Pro.emg8];  
+emg_P=emg_P(2:end,:);
+Ttilda_P = lsqminnorm(emg_P,torque_P)
+stimatedT_P=emg_P*Ttilda_P;
+Rsq1_P = 1 - sum((torque_P - stimatedT_P).^2)/sum((torque_P - mean(torque_P)).^2)
+rightInv_TtP=pinv( Ttilda_P')
+
+Np_plus=pinv( null(Ttilda_P'));
+Q_P=Np_plus*(ones(4)-rightInv_TtP*Ttilda_P')
+
+
+data_T1_Sup=[S(10).data;S(11).data;S(12).data;S(13).data;S(14).data;S(15).data;S(16).data;S(17).data;S(18).data;S(19).data];
+torque_S=data_T1_Sup.torqueZ;
+torque_S=torque_S(2:end,:);
+emg_S=[data_T1_Sup.emg3,data_T1_Sup.emg5,data_T1_Sup.emg7,data_T1_Sup.emg8];  
+emg_S=emg_S(2:end,:);
+Ttilda_S = lsqminnorm(emg_S,torque_S);
+stimatedT_S=emg_S*Ttilda_S;
+Rsq1_S = 1 - sum((torque_S - stimatedT_S).^2)/sum((torque_S - mean(torque_S)).^2)
+rightInv_TtS=pinv(Ttilda_S');
+Ns_plus= pinv( null(Ttilda_S'));
+Q_S=Ns_plus*(ones(4)-rightInv_TtS*Ttilda_S');
+figure;
+plot(torque_S)
+hold on 
+plot(movmean(stimatedT_S,50))
+legend('observed torque','stimated torque')
