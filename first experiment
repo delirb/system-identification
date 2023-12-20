@@ -1,6 +1,7 @@
-
+this contains various steps: 1. how to import data in MatLab 2. how to implement Butterworth filtering 3. Normalizing data between 0-1 4. how to specify exact values of a recorded data
+5. least square method with lsqminnorm 6. other math methods are explained in the mentioned paper completely
 clear all
-%%
+%% importing data from Excel to Matlab Table 
 P = 'E:/DataAnalyze/pooya/15.8.2021/test1';
 S = dir(fullfile(P,'*.csv')); 
 for k = 1:numel(S)
@@ -12,7 +13,7 @@ for k = 1:numel(S)
 end 
 
 %%
-% butterworth filtering
+%% butterworth filtering
 for K=1:19
 fc_emg = 3;  %cutoff frequency emg signal 
 fc_kukaTorque=10;%low pass filter for  velocity data
@@ -40,7 +41,7 @@ Fs1= fs(K);
 end
 
 %%normalizing emg and torque 
-%normalize emg positive 
+%get the max and min for desired data  
 data_T1_relax=[S(10).data]; %pro sup
 min_relax_emg(1)=min(data_T1_relax.emg3);
 min_relax_emg(2)=min(data_T1_relax.emg7);
@@ -56,20 +57,20 @@ min_relax_torque=min(abs(data_T1_relax.torqueZ));
 max_hard_torque=max(abs(data_T1_hard.torqueZ));
 
 for j=1:numel(S)
+%% four channels are recorded 
    normalize_emg8 = (S(j).data.emg8 - min_relax_emg(4)) / (max_hard_emg(4) -  min_relax_emg(4)); 
-S(j).data.emg8 = normalize_emg8; %%pronator 
+S(j).data.emg8 = normalize_emg8; 
     normalize_emg7 = (S(j).data.emg7 - min_relax_emg(2)) / (max_hard_emg(2) -  min_relax_emg(2)); 
-S(j).data.emg7 = normalize_emg7; %%pronator 
+S(j).data.emg7 = normalize_emg7;  
 
    normalize_emg5 = (S(j).data.emg5 - min_relax_emg(3)) / (max_hard_emg(3) -  min_relax_emg(3)); 
-S(j).data.emg5 = normalize_emg5; %%brachiradialis 
+S(j).data.emg5 = normalize_emg5; 
  
    normalize_emg3 = (S(j).data.emg3 - min_relax_emg(1)) / (max_hard_emg(1) -  min_relax_emg(1)); 
- S(j).data.emg3 = normalize_emg3;  %sup
-  
+ S(j).data.emg3 = normalize_emg3; 
 end
 
-
+%%normalizing torque data 
 for j=1:numel(S)
    normalize_torqueZ = (abs(S(j).data.torqueZ) - min_relax_torque) / (max_hard_torque -  min_relax_torque); 
   torqueZ= normalize_torqueZ; %%brachiradialis 
@@ -79,7 +80,7 @@ for j=1:numel(S)
   
 end
 
-%% extracing desired torque +-10 %
+%% extracting desired torque with +-10 %
 for k = 1:numel(S) %test1 
    S(k).data = S(k).data(100:end-100,:);
    R = S(k).data.desiredTorq(2); % desired torque value
@@ -87,7 +88,7 @@ for k = 1:numel(S) %test1
    ind = find(abs(abs(S(k).data.torqueZ)-R) <= t*R);
    S(k).data = S(k).data(ind, : );
 end
-%%
+%% mapping torque to emgs for both pronation and supination 
 data_T1_Pro=[S(10).data;S(1).data;S(2).data;S(3).data;S(4).data;S(5).data;S(6).data;S(7).data;S(8).data;S(9).data];
 torque_P=data_T1_Pro.torqueZ;
 torque_P=torque_P(2:end,:);
@@ -113,8 +114,4 @@ Rsq1_S = 1 - sum((torque_S - stimatedT_S).^2)/sum((torque_S - mean(torque_S)).^2
 rightInv_TtS=pinv(Ttilda_S');
 Ns_plus= pinv( null(Ttilda_S'));
 Q_S=Ns_plus*(ones(4)-rightInv_TtS*Ttilda_S');
-figure;
-plot(torque_S)
-hold on 
-plot(movmean(stimatedT_S,50))
-legend('observed torque','stimated torque')
+
