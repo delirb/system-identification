@@ -4,7 +4,7 @@ we wanted to obtain the stiffness of the forearm through supination and pronatio
 
 All analyses are done in the frequency domain 
 
-// I am completing the codes and adding more comments to clarify codes. thank you for being patient. If you have any questions. do not hesitate to email me 
+//I am currently finalizing the codes and incorporating additional comments to enhance code clarity. Thank you for your patience. If you have any questions, please feel free to email me. I will provide additional files as soon as my paper is published.
 
 the first experiment: this contains various steps: 1. how to import data in MatLab 2. how to implement Butterworth filtering 3. Normalizing data between 0-1 4. how to specify exact values of recorded data
 5. least square method with lsqminnorm 6. Other math methods are explained in the mentioned paper completely
