@@ -1,4 +1,6 @@
-// fisrt get the coefficients of the filter 
+// first get the coefficients of the filter 
+//Please read the first step to understand how we should implement Butterworth filtering and then come back to this C++ code. 
+// I used Matlab to obtain Butterworth filtering coefficients  
 
 const double a_buttFilt[] = { 1.000000000000000 ,-2.811573677324689  , 2.640483492778340 ,-0.828146275386261 };
 const double b_buttFilt[] = { 0.000095442508423749  , 0.000286327525271246  , 0.000286327525271246  , 0.000095442508423749 };
@@ -19,13 +21,13 @@ double butterFiltEmg(int emgS) //low pass filter order 3
 
 const double q_buttFilt[] = {1.000000000000000 ,-4.898337145711598  , 9.598497090805592 ,-9.405307989195727  , 4.608476358536904 ,-0.903328285337999 };
 const double z_buttFilt[] = {0.950435839674619, -4.752179198373097  , 9.504358396746195, -9.504358396746195  , 4.752179198373097 ,-0.950435839674619 };
-double butterHPFiltAccel(double accele) //high pass filter order 5
+double butterHPFiltAccel(double accel) //high pass filter order 5
 {
 	nfc[0] = nfc[1];
 	nfc[1] = nfc[2];
 	nfc[2] = nfc[3];
 	nfc[3] = nfc[4];
-	nfc[4] = accele;
+	nfc[4] = accel;
 	mfc[0] = mfc[1];
 	mfc[1] = mfc[2];
 	mfc[2] = mfc[3];
