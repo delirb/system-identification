@@ -1,5 +1,6 @@
-this contains various steps: 1. how to import data in MatLab 2. how to implement Butterworth filtering 3. Normalizing data between 0-1 4. how to specify exact values of a recorded data
-5. least square method with lsqminnorm 6. other math methods are explained in the mentioned paper completely
+//this contains various steps: 1. how to import data in MatLab 2. how to implement Butterworth filtering 
+//3. Normalizing data between 0-1 4. How to specify exact values of recorded data
+//5. the least square method with (lsqminnorm) 6. Other math methods are explained in the mentioned paper completely
 clear all
 %% importing data from Excel to Matlab Table 
 P = 'E:/DataAnalyze/pooya/15.8.2021/test1';
@@ -21,11 +22,10 @@ fc_kukaAngle=10;
 % 120 test 1
 % 50 test2
 Fs1= fs(K); 
-% S(1).data=hard;
+
 [b,a]   = butter(3,fc_emg/(Fs1/2));
 [b2,a2] = butter(2,fc_kukaTorque/(Fs1/2));
 %%filter data
-% y = filtfilt(b,a,x)
 %  myo emg data   
  S(K).data.emg1 = filtfilt(b,a,S(K).data.emg1);
  S(K).data.emg2 = filtfilt(b,a,S(K).data.emg2);
