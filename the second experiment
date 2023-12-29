@@ -1,5 +1,8 @@
-%% the second test, assessing if this data can fit with a second order linear model and then doing requency domain methods to extract stiffness and then map this stiffness with related EMGS
-P2 = 'E:/DataAnalyze/pooya/15.8.2021/test2';
+//The second test, assessing if this data can fit with a second-order linear model and then doing frequency domain methods to extract stiffness and 
+//then map this stiffness with related EMGS
+
+%%importing data from Excel to MATLAB
+P2 = 'E:/DataAnalyze/15.8.2021/test2';
 S2 = dir(fullfile(P2,'*.csv')); 
 for k = 1:numel(S2)
      F = fullfile(P2,S2(k).name);
@@ -9,7 +12,7 @@ for k = 1:numel(S2)
   fs(k)=floor(1/(mean(diff(S2(k).data.time))))
 end 
 %%
-% filtering
+% Butterworth filtering
 for k = 1:numel(S2)
 fc_emg = 3;  %cutoff frequency emg signal 
 fc_kukaTorque=15;%low pass filter for  velocity data
@@ -17,12 +20,12 @@ fc_kukaAngle=15;
 % 120 test 1
 % 50 test2
 Fs1= fs(k); 
-% S(1).data=hard;
+
 [b,a]   = butter(3,fc_emg/(Fs1/2));
 [b2,a2] = butter(2,fc_kukaTorque/(Fs1/2));
 [b3,a3] = butter(4,fc_kukaAngle/(Fs1/2));
 %%filter data
-% y = filtfilt(b,a,x)
+
 %  myo emg data   
  S2(k).data.emg1 = filtfilt(b,a,S2(k).data.emg1);
  S2(k).data.emg2 = filtfilt(b,a,S2(k).data.emg2);
@@ -59,8 +62,9 @@ for j=1:numel(S2)
 % S(j).data.torqueZ = normalize_torqueZ;  %sup
   
 end
-%%
-i=10;
+%% extracting the specified range of desired value 25%
+%% There are two different sets of data so the loop is repeated 2 times
+
 for i=11:22
  %  S(i).data = S(i).data(300:end,:);
     R = S2(i).data.time_1(5); % desired torque value
@@ -69,46 +73,34 @@ for i=11:22
     S2(i).data = S2(i).data(ind, : );
 end 
 for i=1:10
- %  S(i).data = S(i).data(300:end,:);
+
     R = S2(i).data.time_1(5); % desired torque value
     t = 0.25;
     ind = find(abs(abs(S2(i).data.torqueZ)-R) <= t*R);
     S2(i).data = S2(i).data(ind, : );
 end 
-%%
+%% we have 5 different level of muscular activation from rest to full contraction
 %pro
-     data_T2_ProTSup=[S2(10).data];%hard S2(9).data;
-     data_T2_ProTSup=[S2(5).data];%S2(6).data];%0.6  
-     data_T2_ProTSup=[S2(7).data];%S2(7).data]; %0.9  
-     data_T2_ProTSup=[S2(1).data];%S2(2).data];%0.2
      data_T2_ProTSup=[S2(4).data];%S2(3).data]; %0.4
-     data_T2_ProTSup=[S2(11).data]; %Rest
-     data_T2_ProTSup=[S2(12).data]; %Kuka no hand
+     //data_T2_ProTSup=[S2(10).data]; %Rest
+    
  %sup
-     data_T2_ProTSup=[S2(21).data];%S2(22).data];%hard
-     data_T2_ProTSup=[S2(17).data];%S2(17).data];%0.6  
-     data_T2_ProTSup=[S2(19).data];%S2(20).data]; %0.8  
-     data_T2_ProTSup=[S2(13).data];%S2(14).data];%0.2
+    
      data_T2_ProTSup=[S2(16).data];%S2(16).data]; %0.4
      
-    emg_ST0_11=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
-    emg_ST0_13=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%rest
-    emg_ST0_16=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.2
-    emg_ST0_17=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.4
-    emg_ST0_21=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.6
-    emg_ST0_4=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
-   emg_ST0_5=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
-   emg_ST0_7=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
-   emg_ST0_10=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  %%0.8
-
+    emg_ST0_16=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  % SUP
+     emg_ST0_4=[data_T2_ProTSup.emg3,data_T2_ProTSup.emg5,data_T2_ProTSup.emg7,data_T2_ProTSup.emg8];  % PRO
+  
     
     %%
     j=11;
     Fs=fs(j);
+
+%% changing names for clarification 
     angle_Data_p=deg2rad(data_T2_ProTSup.angleD);
     torque_time_P=-(data_T2_ProTSup.torqueZ);
-    1
-        %% frquency domain analysis 
+    
+%% frquency domain analysis 
 torg = data_T2_ProTSup.time;                                  % Time Vector
 inp = angle_Data_p;                                               % Input Vector
 out = torque_time_P;                                                % Output Vector
@@ -122,6 +114,7 @@ inpr = interp1(Tu-min(Tu), inpm, treg);                             % Interpolat
 outr = interp1(Tu-min(Tu), outm, treg);                             % Interpolated Output Data (To ‘treg’)
 
 L = numel(treg);
+%% plot the input-output data 
 figure
 plot(treg, inpr,  treg, outr)
 grid
@@ -140,6 +133,7 @@ plot(treg, outr)
 xlabel('Time (s)')
 ylabel('Torque (Nm)')
 title('input/output of system during REST')
+
 Fn = Fs/2;
 inprm = inpr-mean(inpr);
 outrm = outr-mean(outr);
@@ -156,10 +150,10 @@ TR_Functionmavg=movmean(TR_Function,50);
   [p,h,TorqueP_freqData] =  iomega(outrm, mean(diff(data_T2_ProTSup.time)), 1, 2); 
    regressio_lerner=[accele_time_p velocity_time_p inprm ];
   %%
-
+%%finding the coherence between input and output 
 [a,b]=mscohere(inprm,(outrm),hamming(256),[],L*2,Fs);
 figure;
-semilogx(b,a)
+semilogx(b,a) 
 grid
 title('coherence of input/output during Max supination')
 xlabel('Frequency(Hz)')
@@ -179,7 +173,7 @@ Gwhat = gamma_yu./gamma_uu;
 Gwhat1 = abs(db2mag(gamma_yu)./db2mag(gamma_uu));
 %Gwhat2 = db2mag(abs(Gwhatdb));
 figure;
-% subplot(2,1,1)
+subplot(2,1,1)
 semilogx(Fv,abs(Gwhat))
 hold on 
 semilogx(Fv,(TR_Functionmavg))
