@@ -1,6 +1,6 @@
 //The second test, assessing if this data can fit with a second-order linear model and then doing frequency domain methods to extract stiffness and 
 //then map this stiffness with related EMGS
-
+ 
 %%importing data from Excel to MATLAB
 P2 = 'E:/DataAnalyze/15.8.2021/test2';
 S2 = dir(fullfile(P2,'*.csv')); 
